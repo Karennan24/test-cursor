@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>自动分析 - 绩效提成核算</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="site-header">
+		<h1>自动数据分析</h1>
+		<nav class="breadcrumbs">
+			<a href="index.html">首页</a>
+			<span>›</span>
+			<span>分析</span>
+		</nav>
+	</header>
+
+	<main class="container">
+		<!-- 数据为空提示 -->
+		<div id="emptyDataTip" class="card" style="display: none; text-align: center; padding: 40px;">
+			<div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+			<h3 style="color: var(--muted); margin-bottom: 8px;">暂无数据</h3>
+			<p style="color: var(--muted); margin-bottom: 20px;">请先在上传页面完成数据上传和校验</p>
+			<a href="upload.html" class="btn primary">前往上传页面</a>
+		</div>
+
+		<!-- 时间范围筛选 -->
+		<section class="card" id="filterSection" style="display: none;">
+			<h3>数据筛选</h3>
+			<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+				<label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+					<span>时间范围:</span>
+					<input type="date" id="startDate" style="padding: 6px; border: 1px solid var(--table-border); background: var(--panel); color: var(--text); border-radius: 4px;">
+				</label>
+				<span style="color: var(--muted);">至</span>
+				<label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+					<input type="date" id="endDate" style="padding: 6px; border: 1px solid var(--table-border); background: var(--panel); color: var(--text); border-radius: 4px;">
+				</label>
+				<div style="display: flex; gap: 6px; margin-left: 8px;">
+					<button class="btn-small date-quick-btn" data-days="7">最近7天</button>
+					<button class="btn-small date-quick-btn" data-days="30">最近30天</button>
+					<button class="btn-small date-quick-btn" data-days="90">最近3个月</button>
+					<button class="btn-small date-quick-btn" data-days="365">最近1年</button>
+				</div>
+				<button id="applyFilterBtn" class="btn-small">应用筛选</button>
+				<button id="resetFilterBtn" class="btn-small">重置</button>
+				<button id="exportDataBtn" class="btn-small" style="margin-left: auto;">导出分析结果</button>
+			</div>
+			
+			<!-- AI分析选项（默认关闭，保护数据安全） -->
+			<div style="margin-top: 12px; padding: 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" id="enableAIAnalysis" style="cursor: pointer;">
+					<span style="font-size: 13px; color: var(--warn);">
+						<strong>启用AI深度分析</strong>（可选，数据将发送到AI服务，请确认数据安全）
+					</span>
+				</label>
+				<div id="aiConfig" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+					<label style="display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px;">
+						<span>AI服务:</span>
+						<select id="aiProvider" style="padding: 4px 8px; border: 1px solid var(--table-border); background: var(--panel); color: var(--text); border-radius: 4px;">
+							<option value="deepseek">DeepSeek</option>
+							<option value="local">本地分析（推荐，数据不离开本地）</option>
+						</select>
+					</label>
+					<label style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+						<span>API Key:</span>
+						<input type="password" id="aiApiKey" placeholder="输入API密钥（仅DeepSeek需要）" 
+						       style="flex: 1; padding: 4px 8px; border: 1px solid var(--table-border); background: var(--panel); color: var(--text); border-radius: 4px;">
+					</label>
+					<button id="generateAIAnalysis" class="btn-small" style="margin-top: 8px;">生成AI分析报告</button>
+				</div>
+			</div>
+		</section>
+
+		<!-- 分析维度选项卡 -->
+		<section class="card" id="tabsSection" style="display: none;">
+			<div class="tabs">
+				<button class="tab-btn active" data-tab="overview">概览</button>
+				<button class="tab-btn" data-tab="financial">财务分析</button>
+				<button class="tab-btn" data-tab="marketing">营销分析</button>
+				<button class="tab-btn" data-tab="sales">销售分析</button>
+			</div>
+		</section>
+
+		<!-- 概览选项卡 -->
+		<section class="card tab-content active" id="overviewTab" style="display: none;">
+			<h3>概览</h3>
+			
+			<!-- 关键指标卡片 -->
+			<div id="summaryCards" class="key-metrics" style="margin-bottom: 20px;"></div>
+			
+			<!-- 智能分析报告 -->
+			<div class="analysis-report" id="overviewReport">
+				<h4 style="margin-bottom: 12px; color: var(--brand);">📊 智能分析报告</h4>
+				<div id="overviewAnalysis" class="analysis-text"></div>
+			</div>
+		</section>
+
+		<!-- 财务分析选项卡 -->
+		<section class="card tab-content" id="financialTab" style="display: none;">
+			<h3>财务分析</h3>
+			
+			<!-- 财务分析报告 -->
+			<div class="analysis-report" id="financialReport">
+				<h4 style="margin-bottom: 12px; color: var(--brand);">💰 财务分析报告</h4>
+				<div id="financialAnalysis" class="analysis-text"></div>
+			</div>
+			
+			<!-- 图表筛选器 -->
+			<div class="chart-filters" style="margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+				<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+					<span style="font-size: 13px; color: var(--muted);">筛选维度：</span>
+					<label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+						<input type="checkbox" id="filterByQuarter" class="chart-filter-checkbox" data-filter="quarter"> 按季度
+					</label>
+					<label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+						<input type="checkbox" id="filterBySubject" class="chart-filter-checkbox" data-filter="subject"> 按学科
+					</label>
+					<label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+						<input type="checkbox" id="showMovingAverage" checked> 显示移动平均线
+					</label>
+					<button id="applyChartFilter" class="btn-small" style="margin-left: auto;">应用筛选</button>
+					<button id="resetChartFilter" class="btn-small">重置</button>
+				</div>
+				<div id="filterOptions" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+					<div id="quarterFilterOptions" style="display: none;">
+						<div style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">选择季度：</div>
+						<div id="quarterCheckboxes" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+					</div>
+					<div id="subjectFilterOptions" style="display: none;">
+						<div style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">选择学科：</div>
+						<div id="subjectCheckboxes" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="analysis-grid" style="margin-top: 20px;">
+				<div class="analysis-card">
+					<h4>营收趋势分析</h4>
+					<canvas id="revenueTrendChart" width="600" height="350"></canvas>
+					<div id="revenueTrendInsights" class="chart-insights"></div>
+				</div>
+				<div class="analysis-card">
+					<h4>退费率分析</h4>
+					<canvas id="refundRateChart" width="600" height="350"></canvas>
+					<div id="refundRateInsights" class="chart-insights"></div>
+				</div>
+				<div class="analysis-card">
+					<h4>按季度营收对比</h4>
+					<div id="quarterRevenueTable" class="table-wrapper"></div>
+					<div id="quarterInsights" class="chart-insights"></div>
+				</div>
+				<div class="analysis-card">
+					<h4>净营收趋势</h4>
+					<canvas id="netRevenueTrendChart" width="600" height="350"></canvas>
+					<div id="netRevenueInsights" class="chart-insights"></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- 营销分析选项卡 -->
+		<section class="card tab-content" id="marketingTab" style="display: none;">
+			<h3>营销分析</h3>
+			
+			<!-- 营销分析报告 -->
+			<div class="analysis-report" id="marketingReport">
+				<h4 style="margin-bottom: 12px; color: var(--brand);">📈 营销分析报告</h4>
+				<div id="marketingAnalysis" class="analysis-text"></div>
+			</div>
+			
+			<!-- 图表筛选器 -->
+			<div class="chart-filters" style="margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+				<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+					<span style="font-size: 13px; color: var(--muted);">筛选维度：</span>
+					<label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+						<input type="checkbox" id="filterBySubjectMarketing" class="chart-filter-checkbox" data-filter="subject"> 按学科
+					</label>
+					<label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+						<input type="checkbox" id="filterByClassType" class="chart-filter-checkbox" data-filter="classType"> 按班型
+					</label>
+					<label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+						<input type="checkbox" id="filterByStudentType" class="chart-filter-checkbox" data-filter="studentType"> 按学生类型
+					</label>
+					<span style="font-size: 11px; color: var(--muted); margin-left: 8px;">💡 勾选维度后，下方会显示选项，选择后图表会自动更新</span>
+					<button id="applyMarketingFilter" class="btn-small" style="margin-left: auto;">应用筛选</button>
+					<button id="resetMarketingFilter" class="btn-small">重置</button>
+				</div>
+				<div id="marketingFilterOptions" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+					<div id="subjectMarketingFilterOptions" style="display: none;">
+						<div style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">选择学科：</div>
+						<div id="subjectMarketingCheckboxes" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+					</div>
+					<div id="classTypeFilterOptions" style="display: none;">
+						<div style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">选择班型：</div>
+						<div id="classTypeCheckboxes" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+					</div>
+					<div id="studentTypeFilterOptions" style="display: none;">
+						<div style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">选择学生类型：</div>
+						<div id="studentTypeCheckboxes" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="analysis-grid" style="margin-top: 20px;">
+				<div class="analysis-card">
+					<h4>各学科营收分布</h4>
+					<canvas id="subjectRevenueChart" width="500" height="400"></canvas>
+				</div>
+				<div class="analysis-card">
+					<h4>各学科不同周期营收</h4>
+					<canvas id="subjectPeriodChart" width="720" height="300"></canvas>
+				</div>
+				<div class="analysis-card">
+					<h4>班型营收分析</h4>
+					<canvas id="classTypeChart" width="500" height="400"></canvas>
+				</div>
+				<div class="analysis-card">
+					<h4>学生类型分析</h4>
+					<canvas id="studentTypeChart" width="500" height="400"></canvas>
+				</div>
+				<div class="analysis-card full-width">
+					<h4>学科×周期营收矩阵</h4>
+					<div id="subjectPeriodMatrix" class="table-wrapper"></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- 销售分析选项卡 -->
+		<section class="card tab-content" id="salesTab" style="display: none;">
+			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+				<h3 style="margin: 0;">按销售人员汇总</h3>
+				<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+					<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+						<input type="checkbox" id="multiSelectMode" style="cursor: pointer;">
+						<span>多选模式</span>
+					</label>
+					<button id="applyFilter" class="btn-small" style="display: none;">应用筛选</button>
+					<button id="resetFilter" class="btn-small" style="display: none;">清除选择</button>
+					<span id="filterInfo" style="color: var(--muted); font-size: 12px;"></span>
+				</div>
+			</div>
+			<div id="salesAgg" class="table-wrapper"></div>
+			<div class="chart-grid" style="margin-top: 20px;">
+				<div class="chart-card">
+					<h4>营收与退费对比</h4>
+					<canvas id="revenueRefundChart" width="600" height="300"></canvas>
+					<div id="chartTip" class="chart-tip"></div>
+				</div>
+				<div class="chart-card">
+					<h4>净营收占比</h4>
+					<canvas id="netRevenueChart" width="400" height="400"></canvas>
+					<div id="pieChartTip" class="chart-tip"></div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<footer class="site-footer">
+		<a class="btn link" href="upload.html">返回上传与预览</a>
+	</footer>
+
+	<script src="js/analysis.js"></script>
+</body>
+</html>
+
+
+

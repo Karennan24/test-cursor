@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>绩效提成核算 - 首页</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="site-header">
+		<h1>绩效提成核算系统</h1>
+		<p class="subtitle">简洁 · 高效 · 准确</p>
+	</header>
+
+	<main class="container">
+		<!-- 数据状态提示 -->
+		<section class="card" style="margin-bottom: 16px;">
+			<h3>数据状态</h3>
+			<div id="dataStatus" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+				<span id="statusText" style="color: var(--muted);">正在检查数据状态...</span>
+				<button id="clearDataBtn" class="btn-small" style="display:none;">清除所有数据</button>
+			</div>
+		</section>
+
+		<section class="card-grid">
+			<div class="card">
+				<h3>数据上传与预览</h3>
+				<p>上传营收表与退费表，自动校验并高亮问题数据。</p>
+				<div class="actions">
+					<a class="btn primary" href="upload.html">进入上传与预览</a>
+				</div>
+			</div>
+			<div class="card">
+				<h3>自动分析</h3>
+				<p>对校验通过的数据进行销售绩效与营收/退费分析。</p>
+				<div class="actions">
+					<a class="btn" href="analysis.html" id="analysisLink">进入分析</a>
+				</div>
+			</div>
+		</section>
+
+		<!-- 使用说明 -->
+		<section class="card" style="margin-top: 16px;">
+			<h3>使用说明</h3>
+			<ol style="margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.8;">
+				<li>首先上传营收表和退费表Excel文件</li>
+				<li>系统会自动校验数据，高亮显示问题数据</li>
+				<li>修复问题后，点击"数据可用后进入分析"</li>
+				<li>在分析页面查看销售绩效和可视化图表</li>
+			</ol>
+		</section>
+	</main>
+
+	<footer class="site-footer">
+		<span>© 2025 绩效提成核算</span>
+	</footer>
+
+	<script>
+		// 检查数据状态
+		function checkDataStatus() {
+			try {
+				const revenueData = localStorage.getItem("revenueData");
+				const refundData = localStorage.getItem("refundData");
+				const statusText = document.getElementById("statusText");
+				const clearBtn = document.getElementById("clearDataBtn");
+				const analysisLink = document.getElementById("analysisLink");
+
+				if (revenueData && refundData) {
+					const revenue = JSON.parse(revenueData);
+					const refund = JSON.parse(refundData);
+					
+					if (revenue.length > 0 && refund.length > 0) {
+						statusText.textContent = `✓ 已上传数据：营收表 ${revenue.length} 条，退费表 ${refund.length} 条`;
+						statusText.style.color = "var(--ok)";
+						clearBtn.style.display = "inline-block";
+						analysisLink.classList.add("primary");
+					} else {
+						statusText.textContent = "暂无有效数据";
+						statusText.style.color = "var(--muted)";
+						clearBtn.style.display = "none";
+					}
+				} else {
+					statusText.textContent = "暂无数据，请先上传文件";
+					statusText.style.color = "var(--muted)";
+					clearBtn.style.display = "none";
+				}
+			} catch (e) {
+				console.error("检查数据状态失败:", e);
+				document.getElementById("statusText").textContent = "数据检查失败";
+			}
+		}
+
+		// 清除数据
+		document.getElementById("clearDataBtn")?.addEventListener("click", function() {
+			if (confirm("确定要清除所有已上传的数据吗？")) {
+				localStorage.removeItem("revenueData");
+				localStorage.removeItem("refundData");
+				checkDataStatus();
+				alert("数据已清除");
+			}
+		});
+
+		// 页面加载时检查
+		document.addEventListener("DOMContentLoaded", checkDataStatus);
+	</script>
+</body>
+</html>
+
+
