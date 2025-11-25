@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>上传与预览 - 绩效提成核算</title>
+	<link rel="stylesheet" href="css/styles.css">
+	<!-- SheetJS & FileSaver - 由ensureLibs函数动态加载，避免CDN被阻止 -->
+</head>
+<body>
+	<header class="site-header">
+		<h1>上传与预览</h1>
+		<nav class="breadcrumbs">
+			<a href="index.html">首页</a>
+			<span>›</span>
+			<span>上传与预览</span>
+		</nav>
+	</header>
+
+	<main class="container">
+		<div id="libStatus" class="card" style="margin-bottom:12px; display:none;"></div>
+		<section class="upload-section">
+			<div class="upload-card" id="revenueCard">
+				<h3>营收表上传</h3>
+				<div class="drop-zone" id="revenueDropZone">
+					<div class="drop-zone-content">
+						<div class="drop-icon">📁</div>
+						<p class="drop-text">拖放文件到此处</p>
+						<p class="drop-hint">或点击下方按钮选择文件</p>
+					</div>
+				</div>
+				<label class="file-input">
+					<input type="file" id="revenueFile" accept=".xls,.xlsx,.xlsb,.xlsm,.csv" />
+					<span>选择文件</span>
+				</label>
+				<div class="progress-bar" id="revenueProgress" style="display: none;">
+					<div class="progress-fill" id="revenueProgressFill"></div>
+				</div>
+				<div class="status-line">
+					<span id="revenueUploadStatus" class="muted">未上传</span>
+					<span id="revenueValidBadge" class="badge">待校验</span>
+				</div>
+				<div class="data-stats" id="revenueStats" style="display: none;">
+					<div class="stat-item">
+						<span class="stat-label">总行数:</span>
+						<span class="stat-value" id="revenueTotalRows">0</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-label">问题数:</span>
+						<span class="stat-value" id="revenueIssueCount" style="color: var(--warn);">0</span>
+					</div>
+				</div>
+			</div>
+			<div class="upload-card" id="refundCard">
+				<h3>退费表上传</h3>
+				<div class="drop-zone" id="refundDropZone">
+					<div class="drop-zone-content">
+						<div class="drop-icon">📁</div>
+						<p class="drop-text">拖放文件到此处</p>
+						<p class="drop-hint">或点击下方按钮选择文件</p>
+					</div>
+				</div>
+				<label class="file-input">
+					<input type="file" id="refundFile" accept=".xls,.xlsx,.xlsb,.xlsm,.csv" />
+					<span>选择文件</span>
+				</label>
+				<div class="progress-bar" id="refundProgress" style="display: none;">
+					<div class="progress-fill" id="refundProgressFill"></div>
+				</div>
+				<div class="status-line">
+					<span id="refundUploadStatus" class="muted">未上传</span>
+					<span id="refundValidBadge" class="badge">待校验</span>
+				</div>
+				<div class="data-stats" id="refundStats" style="display: none;">
+					<div class="stat-item">
+						<span class="stat-label">总行数:</span>
+						<span class="stat-value" id="refundTotalRows">0</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-label">问题数:</span>
+						<span class="stat-value" id="refundIssueCount" style="color: var(--warn);">0</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="toolbar">
+			<div class="tool">
+				<label><input type="checkbox" id="onlyIssues"> 仅显示有问题</label>
+			</div>
+			<div class="tool field-selector-wrapper">
+				<div class="field-selector-header" id="fieldSelectorToggle" style="cursor: pointer;">
+					<span style="font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px;">
+						<span class="field-toggle-icon">▶</span>
+						<span>选项字段</span>
+					</span>
+					<div class="field-actions" onclick="event.stopPropagation();">
+						<button type="button" class="btn-small" id="selectAllFields">全选</button>
+						<button type="button" class="btn-small" id="deselectAllFields">全不选</button>
+					</div>
+				</div>
+				<div id="fieldCheckboxesContainer" class="field-checkboxes-container" style="display: none;">
+					<div id="fieldCheckboxes" class="field-checkboxes-inline"></div>
+				</div>
+			</div>
+			<div class="tool right">
+				<button id="toggleEditMode" class="btn">启用编辑</button>
+				<button id="confirmEdit" class="btn" style="display:none;">确认修改</button>
+				<button id="revalidateData" class="btn" style="display:none;">再次数据核查</button>
+				<button id="exportProblems" class="btn">导出问题数据</button>
+				<button id="exportIssues" class="btn">导出全部正确数据</button>
+				<button id="goAnalysis" class="btn primary">数据可用后进入分析</button>
+			</div>
+		</section>
+
+		<!-- 问题说明区域 -->
+		<section id="issueSummary" class="issue-summary" style="display:none;">
+			<h3>数据问题说明</h3>
+			<div id="revenueIssueSummary" class="issue-list"></div>
+			<div id="refundIssueSummary" class="issue-list"></div>
+		</section>
+
+		<section>
+			<h2 class="table-title">营收表预览（最多1000行）</h2>
+			<div id="revenuePreview" class="table-wrapper"></div>
+		</section>
+
+		<section>
+			<h2 class="table-title">退费表预览（最多1000行）</h2>
+			<div id="refundPreview" class="table-wrapper"></div>
+		</section>
+	</main>
+
+	<footer class="site-footer">
+		<a class="btn link" href="index.html">返回首页</a>
+	</footer>
+
+	<!-- 优先尝试本地离线依赖（若你稍后把文件放到 vendor/ 下会自动生效） -->
+	<script src="vendor/xlsx.full.min.js" defer></script>
+	<script src="vendor/FileSaver.min.js" defer></script>
+	<script src="js/validation.js"></script>
+	<script src="js/app.js"></script>
+</body>
+	</html>
+
+
